@@ -1,232 +1,216 @@
--- Script d'initialisation PostgreSQL
--- Projet FitTrack
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS exercise_muscle;
+DROP TABLE IF EXISTS workout_exercise;
+DROP TABLE IF EXISTS workout_type;
+DROP TABLE IF EXISTS user_program;
+DROP TABLE IF EXISTS program;
+DROP TABLE IF EXISTS follow;
+DROP TABLE IF EXISTS exercise;
+DROP TABLE IF EXISTS muscle;
+DROP TABLE IF EXISTS user;
+SET FOREIGN_KEY_CHECKS = 1;
 
--- Nettoyage
-DROP TABLE IF EXISTS exercice_muscle CASCADE;
-DROP TABLE IF EXISTS seance_exercice CASCADE;
-DROP TABLE IF EXISTS seance_type CASCADE;
-DROP TABLE IF EXISTS user_programme CASCADE;
-DROP TABLE IF EXISTS programme CASCADE;
-DROP TABLE IF EXISTS suivi CASCADE;
-DROP TABLE IF EXISTS exercice CASCADE;
-DROP TABLE IF EXISTS muscle CASCADE;
-DROP TABLE IF EXISTS utilisateur CASCADE;
-
--- Tables
-
-CREATE TABLE utilisateur (
-    id               SERIAL PRIMARY KEY,
-    nom              VARCHAR(100) NOT NULL,
-    email            VARCHAR(150) NOT NULL UNIQUE,
-    mot_de_passe_hash VARCHAR(255) NOT NULL,
-    date_naissance   DATE,
-    poids_kg         FLOAT,
-    taille_cm        FLOAT,
-    created_at       TIMESTAMP DEFAULT NOW()
+CREATE TABLE user (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    name          VARCHAR(100) NOT NULL,
+    email         VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    birthdate     DATE,
+    weight_kg     FLOAT,
+    height_cm     FLOAT,
+    created_at    DATETIME DEFAULT NOW()
 );
 
-CREATE TABLE suivi (
-    id         SERIAL PRIMARY KEY,
-    source_id  INT NOT NULL REFERENCES utilisateur(id) ON DELETE CASCADE,
-    cible_id   INT NOT NULL REFERENCES utilisateur(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE follow (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    source_id   INT NOT NULL,
+    target_id   INT NOT NULL,
+    created_at  DATETIME DEFAULT NOW(),
+    FOREIGN KEY (source_id) REFERENCES user(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_id) REFERENCES user(id) ON DELETE CASCADE
 );
 
-CREATE TABLE programme (
-    id             SERIAL PRIMARY KEY,
-    utilisateur_id INT NOT NULL REFERENCES utilisateur(id) ON DELETE CASCADE,
-    nom            VARCHAR(150) NOT NULL,
-    description    TEXT,
-    actif          BOOLEAN DEFAULT TRUE,
-    created_at     TIMESTAMP DEFAULT NOW()
+CREATE TABLE program (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT NOT NULL,
+    name        VARCHAR(150) NOT NULL,
+    description TEXT,
+    active      BOOLEAN DEFAULT TRUE,
+    created_at  DATETIME DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 );
 
-CREATE TABLE user_programme (
-    id             SERIAL PRIMARY KEY,
-    utilisateur_id INT NOT NULL REFERENCES utilisateur(id) ON DELETE CASCADE,
-    programme_id   INT NOT NULL REFERENCES programme(id) ON DELETE CASCADE,
-    date_debut     DATE NOT NULL,
-    date_fin       DATE
+CREATE TABLE user_program (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT NOT NULL,
+    program_id  INT NOT NULL,
+    start_date  DATE NOT NULL,
+    end_date    DATE,
+    FOREIGN KEY (user_id)    REFERENCES user(id)    ON DELETE CASCADE,
+    FOREIGN KEY (program_id) REFERENCES program(id) ON DELETE CASCADE
 );
 
-CREATE TABLE seance_type (
-    id           SERIAL PRIMARY KEY,
-    programme_id INT NOT NULL REFERENCES programme(id) ON DELETE CASCADE,
-    nom          VARCHAR(150) NOT NULL,
-    ordre        INT DEFAULT 1,
-    jour_semaine VARCHAR(20)
+CREATE TABLE workout_type (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    program_id  INT NOT NULL,
+    name        VARCHAR(150) NOT NULL,
+    order_index INT DEFAULT 1,
+    week_day    VARCHAR(20),
+    FOREIGN KEY (program_id) REFERENCES program(id) ON DELETE CASCADE
 );
 
 CREATE TABLE muscle (
-    id     SERIAL PRIMARY KEY,
-    nom    VARCHAR(100) NOT NULL,
-    groupe VARCHAR(100) NOT NULL
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    group_name  VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE exercice (
-    id          SERIAL PRIMARY KEY,
-    nom         VARCHAR(150) NOT NULL,
+CREATE TABLE exercise (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(150) NOT NULL,
     type        VARCHAR(50) NOT NULL,
     description TEXT
 );
 
-CREATE TABLE exercice_muscle (
-    exercice_id INT NOT NULL REFERENCES exercice(id) ON DELETE CASCADE,
-    muscle_id   INT NOT NULL REFERENCES muscle(id) ON DELETE CASCADE,
-    role        VARCHAR(50) DEFAULT 'principal',
-    PRIMARY KEY (exercice_id, muscle_id)
+CREATE TABLE exercise_muscle (
+    exercise_id INT NOT NULL,
+    muscle_id   INT NOT NULL,
+    role        VARCHAR(50) DEFAULT 'primary',
+    PRIMARY KEY (exercise_id, muscle_id),
+    FOREIGN KEY (exercise_id) REFERENCES exercise(id) ON DELETE CASCADE,
+    FOREIGN KEY (muscle_id)   REFERENCES muscle(id)   ON DELETE CASCADE
 );
 
-CREATE TABLE seance_exercice (
-    id             SERIAL PRIMARY KEY,
-    seance_type_id INT NOT NULL REFERENCES seance_type(id) ON DELETE CASCADE,
-    exercice_id    INT NOT NULL REFERENCES exercice(id) ON DELETE CASCADE,
-    series_cible   INT DEFAULT 3,
-    reps_cible     INT,
-    poids_cible_kg FLOAT,
-    ordre          INT DEFAULT 1
+CREATE TABLE workout_exercise (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    workout_type_id INT NOT NULL,
+    exercise_id     INT NOT NULL,
+    target_sets     INT DEFAULT 3,
+    target_reps     INT,
+    target_weight   FLOAT,
+    order_index     INT DEFAULT 1,
+    FOREIGN KEY (workout_type_id) REFERENCES workout_type(id) ON DELETE CASCADE,
+    FOREIGN KEY (exercise_id)     REFERENCES exercise(id)     ON DELETE CASCADE
 );
 
--- Index
-CREATE INDEX idx_programme_user ON programme(utilisateur_id);
-CREATE INDEX idx_seance_programme ON seance_type(programme_id);
+CREATE INDEX idx_program_user    ON program(user_id);
+CREATE INDEX idx_workout_program ON workout_type(program_id);
+CREATE INDEX idx_follow_source   ON follow(source_id);
+CREATE INDEX idx_follow_target   ON follow(target_id);
 
--- Vue 1 : voir les programmes avec leur créateur
-CREATE VIEW v_programmes AS
-SELECT p.id, p.nom, p.actif, u.nom AS createur, p.created_at
-FROM programme p
-JOIN utilisateur u ON u.id = p.utilisateur_id;
+CREATE VIEW v_programs AS
+SELECT p.id, p.name, p.active, u.name AS creator, p.created_at
+FROM program p
+JOIN user u ON u.id = p.user_id;
 
--- Vue 2 : voir les abonnés d'un utilisateur
-CREATE VIEW v_abonnes AS
-SELECT s.cible_id, u1.nom AS abonne, u2.nom AS suit
-FROM suivi s
-JOIN utilisateur u1 ON u1.id = s.source_id
-JOIN utilisateur u2 ON u2.id = s.cible_id;
+CREATE VIEW v_followers AS
+SELECT u1.name AS follower, u2.name AS following
+FROM follow f
+JOIN user u1 ON u1.id = f.source_id
+JOIN user u2 ON u2.id = f.target_id;
 
--- Trigger : empêcher de se suivre soi-même
-CREATE OR REPLACE FUNCTION check_suivi()
-RETURNS TRIGGER AS $$
+DELIMITER $$
+CREATE TRIGGER trg_check_follow
+BEFORE INSERT ON follow
+FOR EACH ROW
 BEGIN
-    IF NEW.source_id = NEW.cible_id THEN
-        RAISE EXCEPTION 'Un utilisateur ne peut pas se suivre lui-même';
+    IF NEW.source_id = NEW.target_id THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'A user cannot follow themselves';
     END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+END$$
+DELIMITER ;
 
-CREATE TRIGGER trg_check_suivi
-BEFORE INSERT ON suivi
-FOR EACH ROW EXECUTE FUNCTION check_suivi();
-
--- Trigger : updated_at automatique sur utilisateur
-CREATE OR REPLACE FUNCTION set_updated_at()
-RETURNS TRIGGER AS $$
+DELIMITER $$
+CREATE TRIGGER trg_updated_at_user
+BEFORE UPDATE ON user
+FOR EACH ROW
 BEGIN
-    NEW.created_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+    SET NEW.created_at = NOW();
+END$$
+DELIMITER ;
 
--- Procédure : inscrire un utilisateur à un programme
-CREATE OR REPLACE FUNCTION inscrire_au_programme(p_user INT, p_prog INT)
-RETURNS VOID AS $$
+DELIMITER $$
+CREATE PROCEDURE join_program(IN p_user INT, IN p_program INT)
 BEGIN
-    INSERT INTO user_programme (utilisateur_id, programme_id, date_debut)
-    VALUES (p_user, p_prog, CURRENT_DATE);
-END;
-$$ LANGUAGE plpgsql;
+    INSERT INTO user_program (user_id, program_id, start_date)
+    VALUES (p_user, p_program, CURDATE());
+END$$
+DELIMITER ;
 
--- Procédure : désactiver un programme
-CREATE OR REPLACE FUNCTION desactiver_programme(p_prog INT)
-RETURNS VOID AS $$
+DELIMITER $$
+CREATE PROCEDURE deactivate_program(IN p_program INT)
 BEGIN
-    UPDATE programme SET actif = FALSE WHERE id = p_prog;
-END;
-$$ LANGUAGE plpgsql;
+    UPDATE program SET active = FALSE WHERE id = p_program;
+END$$
+DELIMITER ;
 
--- Procédure : nombre de programmes d'un utilisateur
-CREATE OR REPLACE FUNCTION nb_programmes(p_user INT)
-RETURNS INT AS $$
-DECLARE
-    total INT;
+DELIMITER $$
+CREATE PROCEDURE count_programs(IN p_user INT)
 BEGIN
-    SELECT COUNT(*) INTO total
-    FROM user_programme
-    WHERE utilisateur_id = p_user;
-    RETURN total;
-END;
-$$ LANGUAGE plpgsql;
+    SELECT COUNT(*) AS total
+    FROM user_program
+    WHERE user_id = p_user;
+END$$
+DELIMITER ;
 
--- Transaction exemple
-BEGIN;
-    INSERT INTO utilisateur (nom, email, mot_de_passe_hash)
-    VALUES ('Test User', 'test@demo.fr', 'hash_exemple');
-    INSERT INTO programme (utilisateur_id, nom, description)
-    VALUES (currval('utilisateur_id_seq'), 'Programme test', 'Un programme de test');
-COMMIT;
+INSERT INTO user (name, email, password_hash, birthdate, weight_kg, height_cm) VALUES
+('Alice Martin',  'alice@demo.com', 'hashed_password', '1995-03-14', 62.5, 168.0),
+('Bob Dupont',    'bob@demo.com',   'hashed_password', '1990-07-22', 80.0, 180.5),
+('Clara Lefevre', 'clara@demo.com', 'hashed_password', '1998-11-05', 55.0, 162.0);
 
--- Données de démo
+INSERT INTO follow (source_id, target_id) VALUES (1, 2), (2, 1), (3, 1);
 
-INSERT INTO utilisateur (nom, email, mot_de_passe_hash, date_naissance, poids_kg, taille_cm) VALUES
-('Alice Martin',  'alice@demo.fr', 'hashed_password', '1995-03-14', 62.5, 168.0),
-('Bob Dupont',    'bob@demo.fr',   'hashed_password', '1990-07-22', 80.0, 180.5),
-('Clara Lefevre', 'clara@demo.fr', 'hashed_password', '1998-11-05', 55.0, 162.0);
+INSERT INTO muscle (name, group_name) VALUES
+('Quadriceps', 'Legs'),
+('Pectorals',  'Chest'),
+('Lats',       'Back'),
+('Biceps',     'Arms'),
+('Abs',        'Core');
 
-INSERT INTO suivi (source_id, cible_id) VALUES (1, 2), (2, 1), (3, 1);
+INSERT INTO exercise (name, type, description) VALUES
+('Barbell Squat',    'strength', 'Classic squat with barbell'),
+('Bench Press',      'strength', 'Chest exercise on flat bench'),
+('Pull Ups',         'strength', 'Bodyweight back exercise'),
+('Running',          'cardio',   'Endurance running'),
+('Plank',            'mobility', 'Core isometric exercise');
 
-INSERT INTO muscle (nom, groupe) VALUES
-('Quadriceps',  'Jambes'),
-('Pectoraux',   'Poitrine'),
-('Dorsaux',     'Dos'),
-('Biceps',      'Bras'),
-('Abdominaux',  'Tronc');
+INSERT INTO exercise_muscle (exercise_id, muscle_id, role) VALUES
+(1, 1, 'primary'),
+(2, 2, 'primary'),
+(3, 3, 'primary'),
+(3, 4, 'secondary');
 
-INSERT INTO exercice (nom, type, description) VALUES
-('Squat barre',      'force',  'Squat classique avec barre'),
-('Développé couché', 'force',  'Exercice de poitrine sur banc'),
-('Tractions',        'force',  'Tractions à la barre fixe'),
-('Course à pied',    'cardio', 'Course en endurance'),
-('Gainage',          'mobilite', 'Planche abdominale');
+INSERT INTO program (user_id, name, description) VALUES
+(2, 'PPL Beginner', 'Push Pull Legs 3 days a week'),
+(1, 'Full Body',    'Full body workout 3 times a week');
 
-INSERT INTO exercice_muscle (exercice_id, muscle_id, role) VALUES
-(1, 1, 'principal'),
-(2, 2, 'principal'),
-(3, 3, 'principal'),
-(3, 4, 'secondaire');
-
-INSERT INTO programme (utilisateur_id, nom, description) VALUES
-(2, 'PPL Débutant', 'Push Pull Legs sur 3 jours'),
-(1, 'Full Body',    'Séance complète 3 fois par semaine');
-
-INSERT INTO user_programme (utilisateur_id, programme_id, date_debut) VALUES
+INSERT INTO user_program (user_id, program_id, start_date) VALUES
 (1, 1, '2026-01-15'),
 (2, 1, '2026-01-15'),
 (3, 2, '2026-02-01');
 
-INSERT INTO seance_type (programme_id, nom, ordre, jour_semaine) VALUES
-(1, 'Push', 1, 'Lundi'),
-(1, 'Pull', 2, 'Mercredi'),
-(1, 'Legs', 3, 'Vendredi');
+INSERT INTO workout_type (program_id, name, order_index, week_day) VALUES
+(1, 'Push', 1, 'Monday'),
+(1, 'Pull', 2, 'Wednesday'),
+(1, 'Legs', 3, 'Friday');
 
-INSERT INTO seance_exercice (seance_type_id, exercice_id, series_cible, reps_cible, poids_cible_kg, ordre) VALUES
+INSERT INTO workout_exercise (workout_type_id, exercise_id, target_sets, target_reps, target_weight, order_index) VALUES
 (1, 2, 4, 10, 60.0, 1),
 (2, 3, 4, 8,  NULL, 1),
 (3, 1, 4, 8,  80.0, 1);
 
--- Requête complexe (pour la soutenance)
--- Programmes avec nombre d'inscrits et d'exercices
 SELECT
-    p.nom AS programme,
-    u.nom AS createur,
-    COUNT(DISTINCT up.utilisateur_id) AS nb_inscrits,
-    COUNT(DISTINCT se.exercice_id)    AS nb_exercices
-FROM programme p
-JOIN utilisateur u         ON u.id = p.utilisateur_id
-JOIN user_programme up     ON up.programme_id = p.id
-JOIN seance_type st        ON st.programme_id = p.id
-JOIN seance_exercice se    ON se.seance_type_id = st.id
-WHERE p.actif = TRUE
-GROUP BY p.id, p.nom, u.nom
-HAVING COUNT(DISTINCT up.utilisateur_id) >= 1
-ORDER BY nb_inscrits DESC;
+    p.name AS program,
+    u.name AS creator,
+    COUNT(DISTINCT up.user_id)      AS nb_users,
+    COUNT(DISTINCT we.exercise_id)  AS nb_exercises
+FROM program p
+JOIN user u             ON u.id = p.user_id
+JOIN user_program up    ON up.program_id = p.id
+JOIN workout_type wt    ON wt.program_id = p.id
+JOIN workout_exercise we ON we.workout_type_id = wt.id
+WHERE p.active = TRUE
+GROUP BY p.id, p.name, u.name
+HAVING COUNT(DISTINCT up.user_id) >= 1
+ORDER BY nb_users DESC;
