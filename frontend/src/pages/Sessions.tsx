@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface Exercise {
   exercise_name: string
@@ -19,6 +20,7 @@ const API = 'http://localhost:8000'
 
 export default function Sessions() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const navigate = useNavigate()
 
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
@@ -164,7 +166,7 @@ export default function Sessions() {
       {loading && <p className="empty-state">Loading…</p>}
 
       {sessions.map(s => (
-        <div key={s.id} className="card">
+        <div key={s.id} className="card session-card" onClick={() => navigate(`/sessions/${s.id}`)}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <p style={{ fontWeight: 600 }}>{s.title}</p>
@@ -173,7 +175,7 @@ export default function Sessions() {
               </p>
               {s.notes && <p style={{ fontSize: '0.82rem', color: '#52525b', marginTop: '0.4rem' }}>{s.notes}</p>}
             </div>
-            <button className="btn btn-danger" onClick={() => handleDelete(s.id)}>Delete</button>
+            <button className="btn btn-danger" onClick={e => { e.stopPropagation(); handleDelete(s.id) }}>Delete</button>
           </div>
         </div>
       ))}

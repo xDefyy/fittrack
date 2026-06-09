@@ -5,6 +5,7 @@ import Users from './pages/Users'
 import Programs from './pages/Programs'
 import Muscles from './pages/Muscles'
 import Sessions from './pages/Sessions'
+import SessionDetail from './pages/SessionDetail'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<PrivateRoute><Navigate to="/sessions" replace /></PrivateRoute>} />
           <Route path="/sessions" element={<PrivateRoute><Sessions /></PrivateRoute>} />
+          <Route path="/sessions/:id" element={<PrivateRoute><SessionDetail /></PrivateRoute>} />
           <Route path="/users" element={<PrivateRoute><Users /></PrivateRoute>} />
           <Route path="/programs" element={<PrivateRoute><Programs /></PrivateRoute>} />
           <Route path="/muscles" element={<PrivateRoute><Muscles /></PrivateRoute>} />

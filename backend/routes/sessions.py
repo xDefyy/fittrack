@@ -44,7 +44,13 @@ def get_sessions(user_id: int, conn=Depends(get_db)):
 def get_session(session_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, user_id, title, date, duration_minutes, notes FROM session WHERE id = %s",
+        """
+        SELECT s.id, s.title, s.date, s.duration_minutes, s.notes, s.created_at,
+               u.id, u.name, u.email
+        FROM session s
+        JOIN users u ON u.id = s.user_id
+        WHERE s.id = %s
+        """,
         (session_id,)
     )
     row = cur.fetchone()
@@ -58,9 +64,10 @@ def get_session(session_id: int, conn=Depends(get_db)):
     exercises = [{"id": e[0], "exercise_name": e[1], "sets": e[2], "reps": e[3], "weight_kg": e[4]} for e in cur.fetchall()]
 
     return {
-        "id": row[0], "user_id": row[1], "title": row[2],
-        "date": str(row[3]), "duration_minutes": row[4],
-        "notes": row[5], "exercises": exercises
+        "id": row[0], "title": row[1], "date": str(row[2]),
+        "duration_minutes": row[3], "notes": row[4], "created_at": str(row[5]),
+        "user": {"id": row[6], "name": row[7], "email": row[8]},
+        "exercises": exercises
     }
 
 
