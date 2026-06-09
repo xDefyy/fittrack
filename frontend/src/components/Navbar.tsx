@@ -1,11 +1,15 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 
-export default function Navbar() {
+interface Props {
+  onLogout: () => void
+}
+
+export default function Navbar({ onLogout }: Props) {
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   function logout() {
-    localStorage.removeItem('user')
+    onLogout()
     navigate('/login')
   }
 
@@ -13,10 +17,10 @@ export default function Navbar() {
     <nav className="navbar">
       <span className="navbar-logo">FitTrack</span>
       <div className="navbar-links">
+        <NavLink to="/sessions" className={({ isActive }) => isActive ? 'active' : ''}>Sessions</NavLink>
         <NavLink to="/users" className={({ isActive }) => isActive ? 'active' : ''}>Users</NavLink>
         <NavLink to="/programs" className={({ isActive }) => isActive ? 'active' : ''}>Programs</NavLink>
         <NavLink to="/muscles" className={({ isActive }) => isActive ? 'active' : ''}>Muscles</NavLink>
-        <NavLink to="/sessions" className={({ isActive }) => isActive ? 'active' : ''}>Sessions</NavLink>
       </div>
       <div className="navbar-user">
         <span className="navbar-name">{user.name}</span>

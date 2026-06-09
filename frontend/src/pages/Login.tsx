@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
-export default function Login() {
+interface Props {
+  onLogin: (user: object) => void
+}
+
+export default function Login({ onLogin }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -23,8 +27,8 @@ export default function Login() {
     }
 
     const user = await res.json()
-    localStorage.setItem('user', JSON.stringify(user))
-    navigate('/users')
+    onLogin(user)
+    navigate('/sessions')
   }
 
   return (
