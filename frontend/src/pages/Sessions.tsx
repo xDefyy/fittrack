@@ -21,6 +21,7 @@ export default function Sessions() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   const [sessions, setSessions] = useState<Session[]>([])
+  const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [duration, setDuration] = useState('')
@@ -31,9 +32,15 @@ export default function Sessions() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!user.id) return
     fetch(`${API}/sessions?user_id=${user.id}`)
-      .then(r => r.json())
-      .then(setSessions)
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to fetch')
+        return r.json()
+      })
+      .then(data => setSessions(Array.isArray(data) ? data : []))
+      .catch(() => setError('Could not load sessions'))
+      .finally(() => setLoading(false))
   }, [])
 
   function updateExercise(index: number, field: keyof Exercise, value: string) {
@@ -154,6 +161,8 @@ export default function Sessions() {
         </form>
       </div>
 
+      {loading && <p className="empty-state">Loading…</p>}
+
       {sessions.map(s => (
         <div key={s.id} className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -169,7 +178,7 @@ export default function Sessions() {
         </div>
       ))}
 
-      {sessions.length === 0 && <p className="empty-state">No sessions yet. Log your first workout!</p>}
+      {!loading && sessions.length === 0 && <p className="empty-state">No sessions yet. Log your first workout!</p>}
     </div>
   )
 }
