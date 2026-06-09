@@ -10,7 +10,8 @@ dist/
 
 # Environment
 .env
-*.env.local
+.env.*
+!.env.example
 
 # Node / Frontend
 node_modules/
