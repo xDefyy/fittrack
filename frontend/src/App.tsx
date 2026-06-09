@@ -3,6 +3,7 @@ import Navbar from './components/Navbar'
 import Users from './pages/Users'
 import Programs from './pages/Programs'
 import Muscles from './pages/Muscles'
+import Sessions from './pages/Sessions'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/users" element={<PrivateRoute><Users /></PrivateRoute>} />
           <Route path="/programs" element={<PrivateRoute><Programs /></PrivateRoute>} />
           <Route path="/muscles" element={<PrivateRoute><Muscles /></PrivateRoute>} />
+          <Route path="/sessions" element={<PrivateRoute><Sessions /></PrivateRoute>} />
         </Routes>
       </main>
     </div>

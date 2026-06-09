@@ -244,6 +244,15 @@ tr:hover td {
   font-size: 0.875rem;
 }
 
+.section-label {
+  font-size: 0.72rem;
+  color: #71717a;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
 /* ── Auth pages ── */
 .auth-wrapper {
   min-height: 100vh;

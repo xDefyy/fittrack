@@ -11,7 +11,7 @@ def get_db():
         host=os.getenv("MYSQL_HOST", "141.227.152.96"),
         port=int(os.getenv("MYSQL_PORT", "3307")),
         user=os.getenv("MYSQL_USER", "fittrack"),
-        password=os.getenv("MYSQL_PASSWORD", "fittrack_pass"),
+        password=os.getenv("MYSQL_PASSWORD", "PSTBADMIN"),
         database=os.getenv("MYSQL_DB", "fittrack"),
         connection_timeout=10
     )

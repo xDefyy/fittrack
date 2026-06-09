@@ -1,0 +1,113 @@
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from typing import Optional, List
+
+from database import get_db
+
+router = APIRouter()
+
+
+class ExerciseIn(BaseModel):
+    exercise_name: str
+    sets: int
+    reps: Optional[int] = None
+    weight_kg: Optional[float] = None
+
+
+class SessionCreate(BaseModel):
+    user_id: int
+    title: str
+    date: str
+    duration_minutes: Optional[int] = None
+    notes: Optional[str] = None
+    exercises: List[ExerciseIn] = []
+
+
+class SessionUpdate(BaseModel):
+    title: Optional[str] = None
+    notes: Optional[str] = None
+    duration_minutes: Optional[int] = None
+
+
+@router.get("/sessions")
+def get_sessions(user_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, title, date, duration_minutes, notes FROM session WHERE user_id = %s ORDER BY date DESC",
+        (user_id,)
+    )
+    rows = cur.fetchall()
+    return [{"id": r[0], "title": r[1], "date": str(r[2]), "duration_minutes": r[3], "notes": r[4]} for r in rows]
+
+
+@router.get("/sessions/{session_id}")
+def get_session(session_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, user_id, title, date, duration_minutes, notes FROM session WHERE id = %s",
+        (session_id,)
+    )
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    cur.execute(
+        "SELECT id, exercise_name, sets, reps, weight_kg FROM session_exercise WHERE session_id = %s",
+        (session_id,)
+    )
+    exercises = [{"id": e[0], "exercise_name": e[1], "sets": e[2], "reps": e[3], "weight_kg": e[4]} for e in cur.fetchall()]
+
+    return {
+        "id": row[0], "user_id": row[1], "title": row[2],
+        "date": str(row[3]), "duration_minutes": row[4],
+        "notes": row[5], "exercises": exercises
+    }
+
+
+@router.post("/sessions", status_code=201)
+def create_session(data: SessionCreate, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO session (user_id, title, date, duration_minutes, notes) VALUES (%s, %s, %s, %s, %s)",
+        (data.user_id, data.title, data.date, data.duration_minutes, data.notes)
+    )
+    session_id = cur.lastrowid
+
+    for ex in data.exercises:
+        cur.execute(
+            "INSERT INTO session_exercise (session_id, exercise_name, sets, reps, weight_kg) VALUES (%s, %s, %s, %s, %s)",
+            (session_id, ex.exercise_name, ex.sets, ex.reps, ex.weight_kg)
+        )
+
+    conn.commit()
+    return {"id": session_id, "title": data.title, "date": data.date}
+
+
+@router.put("/sessions/{session_id}")
+def update_session(session_id: int, data: SessionUpdate, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM session WHERE id = %s", (session_id,))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if data.title:
+        cur.execute("UPDATE session SET title = %s WHERE id = %s", (data.title, session_id))
+    if data.notes:
+        cur.execute("UPDATE session SET notes = %s WHERE id = %s", (data.notes, session_id))
+    if data.duration_minutes:
+        cur.execute("UPDATE session SET duration_minutes = %s WHERE id = %s", (data.duration_minutes, session_id))
+
+    conn.commit()
+    return {"message": "Session updated"}
+
+
+@router.delete("/sessions/{session_id}")
+def delete_session(session_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM session WHERE id = %s", (session_id,))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    cur.execute("DELETE FROM session WHERE id = %s", (session_id,))
+    conn.commit()
+    return {"message": "Session deleted"}
