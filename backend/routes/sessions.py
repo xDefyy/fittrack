@@ -33,11 +33,22 @@ class SessionUpdate(BaseModel):
 def get_sessions(user_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, title, date, duration_minutes, notes FROM session WHERE user_id = %s ORDER BY date DESC",
+        """
+        SELECT s.id, s.title, s.date, s.duration_minutes, s.notes,
+               COALESCE(SUM(se.sets * COALESCE(se.reps, 1) * COALESCE(se.weight_kg, 0)), 0) AS total_weight
+        FROM session s
+        LEFT JOIN session_exercise se ON se.session_id = s.id
+        WHERE s.user_id = %s
+        GROUP BY s.id, s.title, s.date, s.duration_minutes, s.notes
+        ORDER BY s.date DESC
+        """,
         (user_id,)
     )
     rows = cur.fetchall()
-    return [{"id": r[0], "title": r[1], "date": str(r[2]), "duration_minutes": r[3], "notes": r[4]} for r in rows]
+    return [
+        {"id": r[0], "title": r[1], "date": str(r[2]), "duration_minutes": r[3], "notes": r[4], "total_weight": round(float(r[5]), 1)}
+        for r in rows
+    ]
 
 
 @router.get("/sessions/{session_id}")
