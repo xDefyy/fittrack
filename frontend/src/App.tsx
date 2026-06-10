@@ -8,6 +8,8 @@ import Sessions from './pages/Sessions'
 import SessionDetail from './pages/SessionDetail'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Profile from './pages/Profile'
+import Stats from './pages/Stats'
 
 export default function App() {
   const [user, setUser] = useState(() => localStorage.getItem('user'))
@@ -40,6 +42,8 @@ export default function App() {
           <Route path="/users" element={<PrivateRoute><Users /></PrivateRoute>} />
           <Route path="/programs" element={<PrivateRoute><Programs /></PrivateRoute>} />
           <Route path="/muscles" element={<PrivateRoute><Muscles /></PrivateRoute>} />
+          <Route path="/profile/:id" element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path="/stats" element={<PrivateRoute><Stats /></PrivateRoute>} />
         </Routes>
       </main>
     </div>

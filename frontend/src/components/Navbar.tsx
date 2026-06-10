@@ -21,9 +21,12 @@ export default function Navbar({ onLogout }: Props) {
         <NavLink to="/users" className={({ isActive }) => isActive ? 'active' : ''}>Users</NavLink>
         <NavLink to="/programs" className={({ isActive }) => isActive ? 'active' : ''}>Programs</NavLink>
         <NavLink to="/muscles" className={({ isActive }) => isActive ? 'active' : ''}>Muscles</NavLink>
+        <NavLink to="/stats" className={({ isActive }) => isActive ? 'active' : ''}>Stats</NavLink>
       </div>
       <div className="navbar-user">
-        <span className="navbar-name">{user.name}</span>
+        <NavLink to={`/profile/${user.id}`} className={({ isActive }) => isActive ? 'active' : ''}>
+          {user.name}
+        </NavLink>
         <button onClick={logout} className="navbar-logout">Logout</button>
       </div>
     </nav>
