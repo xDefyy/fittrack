@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import users, muscle, program, auth, sessions, exercises, follow
+from routes import users, muscle, program, auth, sessions, exercises, follow, stats
 
 app = FastAPI()
 
@@ -19,3 +19,4 @@ app.include_router(auth.router)
 app.include_router(sessions.router)
 app.include_router(exercises.router)
 app.include_router(follow.router)
+app.include_router(stats.router)
