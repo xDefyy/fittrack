@@ -87,7 +87,7 @@ export default function Profile() {
           <div className="card session-card" key={s.id} onClick={() => navigate(`/sessions/${s.id}`)} style={{ cursor: 'pointer' }}>
             <p style={{ fontWeight: 600 }}>{s.title}</p>
             <p style={{ fontSize: '0.8rem', color: '#71717a', marginTop: '0.2rem' }}>
-              {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg soulevés` : ''}
+              {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg lifted` : ''}
             </p>
             {s.notes && <p style={{ fontSize: '0.82rem', marginTop: '0.3rem' }}>{s.notes}</p>}
           </div>

@@ -18,12 +18,12 @@ def follow_user(data: FollowData, conn=Depends(get_db)):
 
     cur = conn.cursor()
 
-    # Vérifier que les deux users existent
+    # Check both users exist
     cur.execute("SELECT id FROM users WHERE id = %s", (data.target_id,))
     if not cur.fetchone():
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Vérifier si déjà abonné
+    # Check if already following
     cur.execute(
         "SELECT id FROM follow WHERE source_id = %s AND target_id = %s",
         (data.source_id, data.target_id)

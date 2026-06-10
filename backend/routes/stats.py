@@ -4,7 +4,7 @@ from database import get_mongo
 router = APIRouter()
 
 
-# Progression du poids sur un exercice donné
+# Weight progression for a given exercise
 @router.get("/stats/progression")
 def get_progression(user_id: int, exercise: str):
     mongo = get_mongo()

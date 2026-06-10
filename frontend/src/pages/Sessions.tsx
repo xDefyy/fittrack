@@ -180,7 +180,7 @@ export default function Sessions({ exercises: exerciseOptions }: Props) {
                       <p>{info.description}</p>
                       {info.muscles.length > 0 && (
                         <p style={{ marginTop: '0.3rem' }}>
-                          <strong>Muscles : </strong>
+                          <strong>Muscles: </strong>
                           {info.muscles.map(m => (
                             <span key={m.name} style={{
                               display: 'inline-block',
@@ -220,7 +220,7 @@ export default function Sessions({ exercises: exerciseOptions }: Props) {
             <div>
               <p style={{ fontWeight: 600 }}>{s.title}</p>
               <p style={{ fontSize: '0.8rem', color: '#71717a', marginTop: '0.2rem' }}>
-                {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg soulevés` : ''}
+                {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg lifted` : ''}
               </p>
               {s.notes && <p style={{ fontSize: '0.82rem', color: '#52525b', marginTop: '0.4rem' }}>{s.notes}</p>}
             </div>

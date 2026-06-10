@@ -38,34 +38,34 @@ export default function Stats() {
       </div>
 
       <div className="card">
-        <h2>Progression sur un exercice</h2>
+        <h2>Exercise Progression</h2>
         <div className="form-row">
           <div className="form-group">
-            <label>Exercice</label>
+            <label>Exercise</label>
             <input
               value={exercise}
               onChange={e => setExercise(e.target.value)}
               placeholder="Bench Press"
             />
           </div>
-          <button className="btn btn-primary" onClick={loadStats}>Voir</button>
+          <button className="btn btn-primary" onClick={loadStats}>Search</button>
         </div>
       </div>
 
-      {loading && <p className="empty-state">Chargement...</p>}
+      {loading && <p className="empty-state">Loading...</p>}
 
       {searched && !loading && (
         <>
           <div className="card">
-            <h2>Poids max par date — {exercise}</h2>
+            <h2>Max weight by date — {exercise}</h2>
             {progression.length === 0 ? (
-              <p className="empty-state">Aucune donnée pour cet exercice.</p>
+              <p className="empty-state">No data for this exercise.</p>
             ) : (
               <table>
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Poids max (kg)</th>
+                    <th>Max weight (kg)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -81,9 +81,9 @@ export default function Stats() {
           </div>
 
           <div className="card">
-            <h2>Volume total soulevé par séance</h2>
+            <h2>Total volume lifted per session</h2>
             {volume.length === 0 ? (
-              <p className="empty-state">Aucune donnée.</p>
+              <p className="empty-state">No data available.</p>
             ) : (
               <table>
                 <thead>

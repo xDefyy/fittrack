@@ -100,7 +100,7 @@ def create_session(data: SessionCreate, conn=Depends(get_db)):
 
     conn.commit()
 
-    # Sauvegarde aussi dans MongoDB (un document par exercice)
+    # Also save to MongoDB (one document per exercise)
     mongo = get_mongo()
     for ex in data.exercises:
         if not ex.exercise_name.strip():
