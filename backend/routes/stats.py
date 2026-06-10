@@ -10,35 +10,32 @@ def get_progression(user_id: int, exercise: str):
     mongo = get_mongo()
 
     result = mongo["workout_logs"].aggregate([
-        { "$match": { "user_id": user_id } },
-        { "$unwind": "$exercises" },
-        { "$match": { "exercises.exercise_name": exercise } },
+        { "$match": { "user_id": user_id, "exercise_name": exercise } },
+        { "$unwind": "$sets" },
         { "$group": {
             "_id": "$date",
-            "max_weight": { "$max": "$exercises.weight_kg" }
+            "max_weight": { "$max": "$sets.weight_kg" }
         }},
         { "$sort": { "_id": 1 } }
     ])
 
-    return [{"date": r["_id"], "max_weight": r["max_weight"]} for r in result]
+    return [{"date": str(r["_id"])[:10], "max_weight": r["max_weight"]} for r in result]
 
 
-# Volume total soulevé par séance
 @router.get("/stats/volume")
 def get_volume(user_id: int):
     mongo = get_mongo()
 
     result = mongo["workout_logs"].aggregate([
         { "$match": { "user_id": user_id } },
-        { "$unwind": "$exercises" },
+        { "$unwind": "$sets" },
         { "$group": {
             "_id": "$date",
             "total_volume": {
                 "$sum": {
                     "$multiply": [
-                        "$exercises.sets",
-                        { "$ifNull": ["$exercises.reps", 1] },
-                        { "$ifNull": ["$exercises.weight_kg", 0] }
+                        { "$ifNull": ["$sets.reps", 1] },
+                        { "$ifNull": ["$sets.weight_kg", 0] }
                     ]
                 }
             }
@@ -46,4 +43,4 @@ def get_volume(user_id: int):
         { "$sort": { "_id": 1 } }
     ])
 
-    return [{"date": r["_id"], "total_volume": round(r["total_volume"], 1)} for r in result]
+    return [{"date": str(r["_id"])[:10], "total_volume": round(r["total_volume"], 1)} for r in result]

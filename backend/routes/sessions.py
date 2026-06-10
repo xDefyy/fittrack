@@ -100,26 +100,22 @@ def create_session(data: SessionCreate, conn=Depends(get_db)):
 
     conn.commit()
 
-    # Sauvegarde aussi dans MongoDB
+    # Sauvegarde aussi dans MongoDB (un document par exercice)
     mongo = get_mongo()
-    mongo["workout_logs"].insert_one({
-        "session_id": session_id,
-        "user_id": data.user_id,
-        "title": data.title,
-        "date": data.date,
-        "duration_minutes": data.duration_minutes,
-        "notes": data.notes,
-        "created_at": datetime.utcnow(),
-        "exercises": [
-            {
-                "exercise_name": ex.exercise_name,
-                "sets": ex.sets,
-                "reps": ex.reps,
-                "weight_kg": ex.weight_kg
-            }
-            for ex in data.exercises
-        ]
-    })
+    for ex in data.exercises:
+        if not ex.exercise_name.strip():
+            continue
+        mongo["workout_logs"].insert_one({
+            "session_id": session_id,
+            "user_id": data.user_id,
+            "exercise_name": ex.exercise_name,
+            "date": datetime.strptime(data.date, "%Y-%m-%d"),
+            "sets": [
+                {"set_number": i + 1, "reps": ex.reps, "weight_kg": ex.weight_kg}
+                for i in range(ex.sets)
+            ],
+            "notes": data.notes
+        })
 
     return {"id": session_id, "title": data.title, "date": data.date}
 
