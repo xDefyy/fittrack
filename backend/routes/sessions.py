@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
+from datetime import datetime
 
-from database import get_db
+from database import get_db, get_mongo
 
 router = APIRouter()
 
@@ -98,6 +99,28 @@ def create_session(data: SessionCreate, conn=Depends(get_db)):
         )
 
     conn.commit()
+
+    # Sauvegarde aussi dans MongoDB
+    mongo = get_mongo()
+    mongo["workout_logs"].insert_one({
+        "session_id": session_id,
+        "user_id": data.user_id,
+        "title": data.title,
+        "date": data.date,
+        "duration_minutes": data.duration_minutes,
+        "notes": data.notes,
+        "created_at": datetime.utcnow(),
+        "exercises": [
+            {
+                "exercise_name": ex.exercise_name,
+                "sets": ex.sets,
+                "reps": ex.reps,
+                "weight_kg": ex.weight_kg
+            }
+            for ex in data.exercises
+        ]
+    })
+
     return {"id": session_id, "title": data.title, "date": data.date}
 
 
