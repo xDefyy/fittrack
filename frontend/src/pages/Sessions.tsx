@@ -14,6 +14,7 @@ interface Session {
   date: string
   duration_minutes: number | null
   notes: string | null
+  total_weight: number
 }
 
 const API = 'http://localhost:8000'
@@ -171,7 +172,7 @@ export default function Sessions() {
             <div>
               <p style={{ fontWeight: 600 }}>{s.title}</p>
               <p style={{ fontSize: '0.8rem', color: '#71717a', marginTop: '0.2rem' }}>
-                {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}
+                {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg soulevés` : ''}
               </p>
               {s.notes && <p style={{ fontSize: '0.82rem', color: '#52525b', marginTop: '0.4rem' }}>{s.notes}</p>}
             </div>
