@@ -60,6 +60,24 @@ body {
   background: #3f3f46;
 }
 
+.navbar-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-user a {
+  color: #a1a1aa;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.12s;
+}
+
+.navbar-user a:hover {
+  color: #fff;
+}
+
 /* ── Main layout ── */
 .main {
   flex: 1;
@@ -242,6 +260,40 @@ tr:hover td {
   padding: 2rem;
   color: #a1a1aa;
   font-size: 0.875rem;
+}
+
+.session-card {
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.session-card:hover {
+  border-color: #52525b;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.detail-label {
+  font-size: 0.72rem;
+  color: #71717a;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-value {
+  font-size: 0.9rem;
+  color: #18181b;
 }
 
 .section-label {

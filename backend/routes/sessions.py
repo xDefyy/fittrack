@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
+from datetime import datetime
 
-from database import get_db
+from database import get_db, get_mongo
 
 router = APIRouter()
 
@@ -33,18 +34,35 @@ class SessionUpdate(BaseModel):
 def get_sessions(user_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, title, date, duration_minutes, notes FROM session WHERE user_id = %s ORDER BY date DESC",
+        """
+        SELECT s.id, s.title, s.date, s.duration_minutes, s.notes,
+               COALESCE(SUM(se.sets * COALESCE(se.reps, 1) * COALESCE(se.weight_kg, 0)), 0) AS total_weight
+        FROM session s
+        LEFT JOIN session_exercise se ON se.session_id = s.id
+        WHERE s.user_id = %s
+        GROUP BY s.id, s.title, s.date, s.duration_minutes, s.notes
+        ORDER BY s.date DESC
+        """,
         (user_id,)
     )
     rows = cur.fetchall()
-    return [{"id": r[0], "title": r[1], "date": str(r[2]), "duration_minutes": r[3], "notes": r[4]} for r in rows]
+    return [
+        {"id": r[0], "title": r[1], "date": str(r[2]), "duration_minutes": r[3], "notes": r[4], "total_weight": round(float(r[5]), 1)}
+        for r in rows
+    ]
 
 
 @router.get("/sessions/{session_id}")
 def get_session(session_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, user_id, title, date, duration_minutes, notes FROM session WHERE id = %s",
+        """
+        SELECT s.id, s.title, s.date, s.duration_minutes, s.notes, s.created_at,
+               u.id, u.name, u.email
+        FROM session s
+        JOIN users u ON u.id = s.user_id
+        WHERE s.id = %s
+        """,
         (session_id,)
     )
     row = cur.fetchone()
@@ -58,9 +76,10 @@ def get_session(session_id: int, conn=Depends(get_db)):
     exercises = [{"id": e[0], "exercise_name": e[1], "sets": e[2], "reps": e[3], "weight_kg": e[4]} for e in cur.fetchall()]
 
     return {
-        "id": row[0], "user_id": row[1], "title": row[2],
-        "date": str(row[3]), "duration_minutes": row[4],
-        "notes": row[5], "exercises": exercises
+        "id": row[0], "title": row[1], "date": str(row[2]),
+        "duration_minutes": row[3], "notes": row[4], "created_at": str(row[5]),
+        "user": {"id": row[6], "name": row[7], "email": row[8]},
+        "exercises": exercises
     }
 
 
@@ -80,6 +99,24 @@ def create_session(data: SessionCreate, conn=Depends(get_db)):
         )
 
     conn.commit()
+
+    # Sauvegarde aussi dans MongoDB (un document par exercice)
+    mongo = get_mongo()
+    for ex in data.exercises:
+        if not ex.exercise_name.strip():
+            continue
+        mongo["workout_logs"].insert_one({
+            "session_id": session_id,
+            "user_id": data.user_id,
+            "exercise_name": ex.exercise_name,
+            "date": datetime.strptime(data.date, "%Y-%m-%d"),
+            "sets": [
+                {"set_number": i + 1, "reps": ex.reps, "weight_kg": ex.weight_kg}
+                for i in range(ex.sets)
+            ],
+            "notes": data.notes
+        })
+
     return {"id": session_id, "title": data.title, "date": data.date}
 
 

@@ -22,6 +22,13 @@ def get_db():
 
 
 # --- MongoDB ---
+_mongo_client = None
+
 def get_mongo():
-    client = MongoClient(os.getenv("MONGO_URI"))
-    return client[os.getenv("MONGO_DB")]
+    global _mongo_client
+    if _mongo_client is None:
+        _mongo_client = MongoClient(
+            os.getenv("MONGO_URI"),
+            serverSelectionTimeoutMS=5000
+        )
+    return _mongo_client[os.getenv("MONGO_DB")]

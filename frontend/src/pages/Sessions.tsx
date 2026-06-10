@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-interface Exercise {
+interface ExerciseOption {
+  id: number
+  name: string
+  type: string
+  description: string
+  muscles: { name: string; role: string }[]
+}
+
+interface ExerciseRow {
   exercise_name: string
   sets: number
   reps: number | null
@@ -13,20 +22,27 @@ interface Session {
   date: string
   duration_minutes: number | null
   notes: string | null
+  total_weight: number
 }
 
 const API = 'http://localhost:8000'
 
-export default function Sessions() {
+interface Props {
+  exercises: ExerciseOption[]
+}
+
+export default function Sessions({ exercises: exerciseOptions }: Props) {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const navigate = useNavigate()
 
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
+
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [duration, setDuration] = useState('')
   const [notes, setNotes] = useState('')
-  const [exercises, setExercises] = useState<Exercise[]>([
+  const [exercises, setExercises] = useState<ExerciseRow[]>([
     { exercise_name: '', sets: 3, reps: null, weight_kg: null }
   ])
   const [error, setError] = useState('')
@@ -34,16 +50,18 @@ export default function Sessions() {
   useEffect(() => {
     if (!user.id) return
     fetch(`${API}/sessions?user_id=${user.id}`)
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to fetch')
-        return r.json()
-      })
+      .then(r => r.json())
       .then(data => setSessions(Array.isArray(data) ? data : []))
       .catch(() => setError('Could not load sessions'))
       .finally(() => setLoading(false))
+
   }, [])
 
-  function updateExercise(index: number, field: keyof Exercise, value: string) {
+  function getExerciseInfo(name: string) {
+    return exerciseOptions.find(e => e.name === name) || null
+  }
+
+  function updateExercise(index: number, field: keyof ExerciseRow, value: string) {
     setExercises(prev => prev.map((ex, i) =>
       i === index ? { ...ex, [field]: value === '' ? null : isNaN(Number(value)) ? value : Number(value) } : ex
     ))
@@ -123,34 +141,67 @@ export default function Sessions() {
 
           <div style={{ marginTop: '1rem' }}>
             <p className="section-label">Exercises</p>
-            {exercises.map((ex, i) => (
-              <div key={i} className="form-row" style={{ marginBottom: '0.5rem' }}>
-                <div className="form-group">
-                  <label>Exercise</label>
-                  <input
-                    value={ex.exercise_name}
-                    onChange={e => updateExercise(i, 'exercise_name', e.target.value)}
-                    placeholder="Squat"
-                  />
+            {exercises.map((ex, i) => {
+              const info = getExerciseInfo(ex.exercise_name)
+              return (
+                <div key={i} style={{ marginBottom: '1rem', padding: '0.75rem', border: '1px solid #e4e4e7', borderRadius: '6px' }}>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Exercise</label>
+                      <select
+                        value={ex.exercise_name}
+                        onChange={e => updateExercise(i, 'exercise_name', e.target.value)}
+                      >
+                        <option value="">Select an exercise</option>
+                        {exerciseOptions.map(opt => (
+                          <option key={opt.id} value={opt.name}>{opt.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Sets</label>
+                      <input type="number" value={ex.sets} onChange={e => updateExercise(i, 'sets', e.target.value)} style={{ width: 70 }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Reps</label>
+                      <input type="number" value={ex.reps ?? ''} onChange={e => updateExercise(i, 'reps', e.target.value)} placeholder="—" style={{ width: 70 }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Weight (kg)</label>
+                      <input type="number" value={ex.weight_kg ?? ''} onChange={e => updateExercise(i, 'weight_kg', e.target.value)} placeholder="—" style={{ width: 80 }} />
+                    </div>
+                    {exercises.length > 1 && (
+                      <button type="button" className="btn btn-danger" style={{ marginTop: '1.1rem' }} onClick={() => removeExercise(i)}>✕</button>
+                    )}
+                  </div>
+
+                  {info && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: '#52525b' }}>
+                      <p>{info.description}</p>
+                      {info.muscles.length > 0 && (
+                        <p style={{ marginTop: '0.3rem' }}>
+                          <strong>Muscles : </strong>
+                          {info.muscles.map(m => (
+                            <span key={m.name} style={{
+                              display: 'inline-block',
+                              marginRight: '0.3rem',
+                              padding: '0.1rem 0.5rem',
+                              borderRadius: '999px',
+                              background: m.role === 'primary' ? '#18181b' : '#e4e4e7',
+                              color: m.role === 'primary' ? '#fff' : '#52525b',
+                              fontSize: '0.72rem'
+                            }}>
+                              {m.name}
+                            </span>
+                          ))}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="form-group">
-                  <label>Sets</label>
-                  <input type="number" value={ex.sets} onChange={e => updateExercise(i, 'sets', e.target.value)} style={{ width: 70 }} />
-                </div>
-                <div className="form-group">
-                  <label>Reps</label>
-                  <input type="number" value={ex.reps ?? ''} onChange={e => updateExercise(i, 'reps', e.target.value)} placeholder="—" style={{ width: 70 }} />
-                </div>
-                <div className="form-group">
-                  <label>Weight (kg)</label>
-                  <input type="number" value={ex.weight_kg ?? ''} onChange={e => updateExercise(i, 'weight_kg', e.target.value)} placeholder="—" style={{ width: 80 }} />
-                </div>
-                {exercises.length > 1 && (
-                  <button type="button" className="btn btn-danger" style={{ marginTop: '1.1rem' }} onClick={() => removeExercise(i)}>✕</button>
-                )}
-              </div>
-            ))}
-            <button type="button" className="btn btn-primary" style={{ marginTop: '0.25rem' }} onClick={addExercise}>+ Add exercise</button>
+              )
+            })}
+            <button type="button" className="btn btn-primary" onClick={addExercise}>+ Add exercise</button>
           </div>
 
           {error && <p className="status-msg error">{error}</p>}
@@ -164,16 +215,16 @@ export default function Sessions() {
       {loading && <p className="empty-state">Loading…</p>}
 
       {sessions.map(s => (
-        <div key={s.id} className="card">
+        <div key={s.id} className="card session-card" onClick={() => navigate(`/sessions/${s.id}`)}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <p style={{ fontWeight: 600 }}>{s.title}</p>
               <p style={{ fontSize: '0.8rem', color: '#71717a', marginTop: '0.2rem' }}>
-                {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}
+                {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg soulevés` : ''}
               </p>
               {s.notes && <p style={{ fontSize: '0.82rem', color: '#52525b', marginTop: '0.4rem' }}>{s.notes}</p>}
             </div>
-            <button className="btn btn-danger" onClick={() => handleDelete(s.id)}>Delete</button>
+            <button className="btn btn-danger" onClick={e => { e.stopPropagation(); handleDelete(s.id) }}>Delete</button>
           </div>
         </div>
       ))}
