@@ -14,8 +14,6 @@ export default function Stats() {
   async function loadStats() {
     if (!exercise.trim()) return
     setLoading(true)
-    setSearched(false)
-
     try {
       const [prog, vol] = await Promise.all([
         fetch(`${API}/stats/progression?user_id=${user.id}&exercise=${encodeURIComponent(exercise)}`).then(r => r.json()),
@@ -23,10 +21,10 @@ export default function Stats() {
       ])
       setProgression(Array.isArray(prog) ? prog : [])
       setVolume(Array.isArray(vol) ? vol : [])
-      setSearched(true)
     } catch {
-      setSearched(true)
+      // show empty state on error
     } finally {
+      setSearched(true)
       setLoading(false)
     }
   }

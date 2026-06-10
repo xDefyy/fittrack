@@ -53,15 +53,10 @@ def create_user(user_data: UserCreate, conn=Depends(get_db)):
 @router.put("/users/{user_id}")
 def update_user(user_id: int, user_data: UserUpdate, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="User not found")
-
     if user_data.name:
         cur.execute("UPDATE users SET name = %s WHERE id = %s", (user_data.name, user_id))
     if user_data.email:
         cur.execute("UPDATE users SET email = %s WHERE id = %s", (user_data.email, user_id))
-
     conn.commit()
     return {"message": "User updated"}
 
@@ -69,10 +64,6 @@ def update_user(user_id: int, user_data: UserUpdate, conn=Depends(get_db)):
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="User not found")
-
     cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
     conn.commit()
     return {"message": "User deleted"}

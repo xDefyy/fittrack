@@ -5,6 +5,7 @@ router = APIRouter()
 
 
 # Weight progression for a given exercise
+# TODO: add date range filter
 @router.get("/stats/progression")
 def get_progression(user_id: int, exercise: str):
     mongo = get_mongo()

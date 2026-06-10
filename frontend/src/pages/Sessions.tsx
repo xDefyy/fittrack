@@ -61,10 +61,9 @@ export default function Sessions({ exercises: exerciseOptions }: Props) {
     return exerciseOptions.find(e => e.name === name) || null
   }
 
-  function updateExercise(index: number, field: keyof ExerciseRow, value: string) {
-    setExercises(prev => prev.map((ex, i) =>
-      i === index ? { ...ex, [field]: value === '' ? null : isNaN(Number(value)) ? value : Number(value) } : ex
-    ))
+  function updateExercise(idx: number, field: keyof ExerciseRow, value: string) {
+    const val = value === '' ? null : isNaN(Number(value)) ? value : Number(value)
+    setExercises(prev => prev.map((ex, i) => i === idx ? { ...ex, [field]: val } : ex))
   }
 
   function addExercise() {
@@ -229,6 +228,7 @@ export default function Sessions({ exercises: exerciseOptions }: Props) {
         </div>
       ))}
 
+      {/* TODO: pagination if sessions grow */}
       {!loading && sessions.length === 0 && <p className="empty-state">No sessions yet. Log your first workout!</p>}
     </div>
   )

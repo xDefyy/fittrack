@@ -21,4 +21,7 @@ def login(data: LoginData, conn=Depends(get_db)):
     user = cur.fetchone()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    return {"id": user[0], "name": user[1], "email": user[2], "is_admin": bool(user[3])}
+    return {"id": user[0], 
+            "name": user[1], 
+            "email": user[2], 
+            "is_admin": bool(user[3])}

@@ -100,7 +100,7 @@ def create_session(data: SessionCreate, conn=Depends(get_db)):
 
     conn.commit()
 
-    # Also save to MongoDB (one document per exercise)
+    # also log to mongo for stats
     mongo = get_mongo()
     for ex in data.exercises:
         if not ex.exercise_name.strip():
@@ -117,23 +117,19 @@ def create_session(data: SessionCreate, conn=Depends(get_db)):
             "notes": data.notes
         })
 
+    # TODO: return full session object here
     return {"id": session_id, "title": data.title, "date": data.date}
 
 
 @router.put("/sessions/{session_id}")
 def update_session(session_id: int, data: SessionUpdate, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM session WHERE id = %s", (session_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="Session not found")
-
     if data.title:
         cur.execute("UPDATE session SET title = %s WHERE id = %s", (data.title, session_id))
     if data.notes:
         cur.execute("UPDATE session SET notes = %s WHERE id = %s", (data.notes, session_id))
     if data.duration_minutes:
         cur.execute("UPDATE session SET duration_minutes = %s WHERE id = %s", (data.duration_minutes, session_id))
-
     conn.commit()
     return {"message": "Session updated"}
 
@@ -141,10 +137,6 @@ def update_session(session_id: int, data: SessionUpdate, conn=Depends(get_db)):
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM session WHERE id = %s", (session_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="Session not found")
-
     cur.execute("DELETE FROM session WHERE id = %s", (session_id,))
     conn.commit()
     return {"message": "Session deleted"}
