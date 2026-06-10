@@ -14,16 +14,21 @@ export default function Stats() {
   async function loadStats() {
     if (!exercise.trim()) return
     setLoading(true)
+    setSearched(false)
 
-    const [prog, vol] = await Promise.all([
-      fetch(`${API}/stats/progression?user_id=${user.id}&exercise=${encodeURIComponent(exercise)}`).then(r => r.json()),
-      fetch(`${API}/stats/volume?user_id=${user.id}`).then(r => r.json()),
-    ])
-
-    setProgression(Array.isArray(prog) ? prog : [])
-    setVolume(Array.isArray(vol) ? vol : [])
-    setSearched(true)
-    setLoading(false)
+    try {
+      const [prog, vol] = await Promise.all([
+        fetch(`${API}/stats/progression?user_id=${user.id}&exercise=${encodeURIComponent(exercise)}`).then(r => r.json()),
+        fetch(`${API}/stats/volume?user_id=${user.id}`).then(r => r.json()),
+      ])
+      setProgression(Array.isArray(prog) ? prog : [])
+      setVolume(Array.isArray(vol) ? vol : [])
+      setSearched(true)
+    } catch {
+      setSearched(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

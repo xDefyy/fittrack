@@ -27,13 +27,16 @@ interface Session {
 
 const API = 'http://localhost:8000'
 
-export default function Sessions() {
+interface Props {
+  exercises: ExerciseOption[]
+}
+
+export default function Sessions({ exercises: exerciseOptions }: Props) {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const navigate = useNavigate()
 
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
-  const [exerciseOptions, setExerciseOptions] = useState<ExerciseOption[]>([])
 
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -52,9 +55,6 @@ export default function Sessions() {
       .catch(() => setError('Could not load sessions'))
       .finally(() => setLoading(false))
 
-    fetch(`${API}/exercises`)
-      .then(r => r.json())
-      .then(data => setExerciseOptions(Array.isArray(data) ? data : []))
   }, [])
 
   function getExerciseInfo(name: string) {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Users from './pages/Users'
@@ -13,6 +13,14 @@ import Stats from './pages/Stats'
 
 export default function App() {
   const [user, setUser] = useState(() => localStorage.getItem('user'))
+  const [exercises, setExercises] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('http://localhost:8000/exercises')
+      .then(r => r.json())
+      .then(data => setExercises(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
 
   function handleLogin(userData: object) {
     const json = JSON.stringify(userData)
@@ -37,7 +45,7 @@ export default function App() {
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<PrivateRoute><Navigate to="/sessions" replace /></PrivateRoute>} />
-          <Route path="/sessions" element={<PrivateRoute><Sessions /></PrivateRoute>} />
+          <Route path="/sessions" element={<PrivateRoute><Sessions exercises={exercises} /></PrivateRoute>} />
           <Route path="/sessions/:id" element={<PrivateRoute><SessionDetail /></PrivateRoute>} />
           <Route path="/users" element={<PrivateRoute><Users /></PrivateRoute>} />
           <Route path="/programs" element={<PrivateRoute><Programs /></PrivateRoute>} />
