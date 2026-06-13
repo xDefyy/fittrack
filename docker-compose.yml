@@ -3,8 +3,14 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
+    environment:
+      MYSQL_HOST: 141.227.152.96
+      MYSQL_PORT: 3307
+      MYSQL_USER: fittrack
+      MYSQL_PASSWORD: PSTBADMIN
+      MYSQL_DB: fittrack
+      MONGO_URI: "mongodb://fittrack:fittrack_pass@141.227.152.96:27017/?authSource=admin"
+      MONGO_DB: fittrack
     restart: unless-stopped
 
   frontend:
