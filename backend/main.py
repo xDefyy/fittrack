@@ -27,14 +27,20 @@ app.include_router(stats.router)
 @app.on_event("startup")
 def create_mongo_indexes():
     mongo = get_mongo()
-    # Index TTL : supprime automatiquement les logs après 2 ans
-    mongo["workout_logs"].create_index(
-        [("date", ASCENDING)],
-        expireAfterSeconds=63072000,
-        name="ttl_workout_logs"
-    )
-    # Index texte : permet la recherche full-text sur le nom de l'exercice
-    mongo["workout_logs"].create_index(
-        [("exercise_name", TEXT)],
-        name="text_exercise_name"
-    )
+    try:
+        # Index TTL : supprime automatiquement les logs après 2 ans
+        mongo["workout_logs"].create_index(
+            [("date", ASCENDING)],
+            expireAfterSeconds=63072000,
+            name="ttl_workout_logs"
+        )
+    except Exception:
+        pass
+    try:
+        # Index texte : permet la recherche full-text sur le nom de l'exercice
+        mongo["workout_logs"].create_index(
+            [("exercise_name", TEXT)],
+            name="text_exercise_name"
+        )
+    except Exception:
+        pass

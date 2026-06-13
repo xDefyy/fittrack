@@ -87,8 +87,6 @@ def get_session(session_id: int, conn=Depends(get_db)):
 def create_session(data: SessionCreate, conn=Depends(get_db)):
     cur = conn.cursor()
     try:
-        conn.start_transaction()
-
         cur.execute(
             "INSERT INTO session (user_id, title, date, duration_minutes, notes) VALUES (%s, %s, %s, %s, %s)",
             (data.user_id, data.title, data.date, data.duration_minutes, data.notes)
