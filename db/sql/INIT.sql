@@ -292,14 +292,41 @@ INSERT INTO user_program (user_id, program_id, start_date) VALUES
 (3, 2, '2026-02-01');
 
 INSERT INTO workout_type (program_id, name, order_index, week_day) VALUES
-(1, 'Push', 1, 'Monday'),
-(1, 'Pull', 2, 'Wednesday'),
-(1, 'Legs', 3, 'Friday');
+(1, 'Push Day', 1, 'Monday'),
+(1, 'Pull Day', 2, 'Wednesday'),
+(1, 'Leg Day',  3, 'Friday'),
+(2, 'Full Body A', 1, 'Monday'),
+(2, 'Full Body B', 2, 'Thursday');
 
+-- workout_type IDs: Push=1, Pull=2, Legs=3, Full Body A=4, Full Body B=5
 INSERT INTO workout_exercise (workout_type_id, exercise_id, target_sets, target_reps, target_weight, order_index) VALUES
-(1, 2, 4, 10, 60.0, 1),
-(2, 3, 4, 8,  NULL, 1),
-(3, 1, 4, 8,  80.0, 1);
+-- Push Day
+(1, 2,  4, 10, 60.0, 1),  -- Bench Press
+(1, 4,  3, 10, 40.0, 2),  -- Overhead Press
+(1, 15, 3, 12, 50.0, 3),  -- Incline Bench Press
+(1, 10, 3, 15, 20.0, 4),  -- Tricep Pushdown
+(1, 11, 3, 15, 10.0, 5),  -- Lateral Raise
+-- Pull Day
+(2, 3,  4, 8,  NULL, 1),  -- Pull Ups
+(2, 7,  4, 10, 50.0, 2),  -- Barbell Row
+(2, 9,  3, 12, 15.0, 3),  -- Bicep Curl
+(2, 16, 3, 15, 15.0, 4),  -- Face Pull
+-- Leg Day
+(3, 1,  4, 8,  80.0, 1),  -- Barbell Squat
+(3, 6,  3, 10, 60.0, 2),  -- Romanian Deadlift
+(3, 12, 3, 12, 100.0, 3), -- Leg Press
+(3, 17, 3, 12, 40.0, 4),  -- Leg Curl
+(3, 14, 4, 15, 60.0, 5),  -- Calf Raise
+-- Full Body A
+(4, 1,  4, 8,  80.0, 1),  -- Barbell Squat
+(4, 2,  4, 8,  60.0, 2),  -- Bench Press
+(4, 7,  3, 10, 50.0, 3),  -- Barbell Row
+(4, 4,  3, 10, 40.0, 4),  -- Overhead Press
+-- Full Body B
+(5, 5,  3, 5,  100.0, 1), -- Deadlift
+(5, 3,  3, 8,  NULL,  2), -- Pull Ups
+(5, 8,  3, 12, NULL,  3), -- Dips
+(5, 13, 3, 12, NULL,  4); -- Lunges
 
 -- --------------------------------------------------------
 -- REQUETE COMPLEXE (exemple / documentation)
