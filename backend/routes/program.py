@@ -28,6 +28,36 @@ def get_programs(conn=Depends(get_db)):
     return [{"id": r[0], "user_id": r[1], "name": r[2], "description": r[3], "active": r[4]} for r in rows]
 
 
+@router.get("/programs/{program_id}/workout")
+def get_program_workout(program_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, description FROM program WHERE id = %s", (program_id,))
+    prog = cur.fetchone()
+    if not prog:
+        raise HTTPException(status_code=404, detail="Program not found")
+    cur.execute("""
+        SELECT wt.id, wt.name, wt.week_day,
+               e.name, we.target_sets, we.target_reps, we.target_weight
+        FROM workout_type wt
+        JOIN workout_exercise we ON we.workout_type_id = wt.id
+        JOIN exercise e ON e.id = we.exercise_id
+        WHERE wt.program_id = %s
+        ORDER BY wt.order_index, we.order_index
+    """, (program_id,))
+    rows = cur.fetchall()
+    workout_types: dict = {}
+    for wt_id, wt_name, week_day, ex_name, sets, reps, weight in rows:
+        if wt_id not in workout_types:
+            workout_types[wt_id] = {"id": wt_id, "name": wt_name, "week_day": week_day, "exercises": []}
+        workout_types[wt_id]["exercises"].append({
+            "exercise_name": ex_name,
+            "sets": sets,
+            "reps": reps,
+            "weight_kg": weight
+        })
+    return {"id": prog[0], "name": prog[1], "description": prog[2], "workout_types": list(workout_types.values())}
+
+
 @router.get("/programs/{program_id}")
 def get_program(program_id: int, conn=Depends(get_db)):
     cur = conn.cursor()

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 interface ExerciseOption {
   id: number
@@ -34,17 +34,21 @@ interface Props {
 export default function Sessions({ exercises: exerciseOptions }: Props) {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const navigate = useNavigate()
+  const location = useLocation()
+  const prefilledState = location.state as { prefilled?: ExerciseRow[]; programTitle?: string } | null
 
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
 
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(prefilledState?.programTitle ?? '')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [duration, setDuration] = useState('')
   const [notes, setNotes] = useState('')
-  const [exercises, setExercises] = useState<ExerciseRow[]>([
-    { exercise_name: '', sets: 3, reps: null, weight_kg: null }
-  ])
+  const [exercises, setExercises] = useState<ExerciseRow[]>(
+    prefilledState?.prefilled && prefilledState.prefilled.length > 0
+      ? prefilledState.prefilled
+      : [{ exercise_name: '', sets: 3, reps: null, weight_kg: null }]
+  )
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -114,6 +118,12 @@ export default function Sessions({ exercises: exerciseOptions }: Props) {
       <div className="page-header">
         <h1>Workout Sessions</h1>
       </div>
+
+      {prefilledState?.programTitle && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.6rem 1rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#15803d' }}>
+          Pre-filled from program: <strong>{prefilledState.programTitle}</strong>
+        </div>
+      )}
 
       <div className="card">
         <h2>New Session</h2>
