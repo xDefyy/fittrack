@@ -1,88 +1,41 @@
-// MongoDB initialization script
-// FitTrack project
+// MongoDB initialization script — FitTrack
+// Collection: workout_logs
+// Stores one document per exercise per session (flexible schema justifies NoSQL)
 
 db = db.getSiblingDB('fittrack');
 
-// Create collection
-db.createCollection("completed_sessions");
+db.createCollection("workout_logs");
 
-// Indexes
-db.completed_sessions.createIndex({ user_id: 1 });
-db.completed_sessions.createIndex({ session_date: -1 });
-db.completed_sessions.createIndex({ free_note: "text" });
+// Index TTL : supprime automatiquement les logs après 2 ans (63072000 secondes)
+db.workout_logs.createIndex({ date: 1 }, { expireAfterSeconds: 63072000, name: "ttl_workout_logs" });
 
-// Demo data
+// Index TEXT : recherche full-text sur le nom de l'exercice
+db.workout_logs.createIndex({ exercise_name: "text" }, { name: "text_exercise_name" });
 
-db.completed_sessions.insertMany([
+// Index simple : requêtes par utilisateur
+db.workout_logs.createIndex({ user_id: 1 }, { name: "idx_user_id" });
 
-  // Strength session — Alice
-  {
-    user_id: 1,
-    session_type_id: 1,
-    session_date: new Date("2026-05-05T08:30:00Z"),
-    duration_minutes: 52,
-    feeling: 4,
-    free_note: "Great session, new PR on bench press",
-    exercises: [
-      {
-        exercise_id: 2,
-        name: "Bench Press",
-        type: "strength",
-        sets: [
-          { set_number: 1, reps: 10, weight_kg: 55.0, completed: true },
-          { set_number: 2, reps: 10, weight_kg: 60.0, completed: true },
-          { set_number: 3, reps: 8,  weight_kg: 62.5, completed: true },
-          { set_number: 4, reps: 6,  weight_kg: 62.5, completed: false }
-        ]
-      }
-    ]
-  },
+// Données de démo
+db.workout_logs.insertMany([
+  // Antoine — Push Day
+  { user_id: 1, session_id: 1, exercise_name: "Bench Press",         date: new Date("2026-05-05"), sets: 4, reps: 10, weight_kg: 60.0 },
+  { user_id: 1, session_id: 1, exercise_name: "Overhead Press",      date: new Date("2026-05-05"), sets: 3, reps: 10, weight_kg: 40.0 },
+  { user_id: 1, session_id: 1, exercise_name: "Tricep Pushdown",     date: new Date("2026-05-05"), sets: 3, reps: 15, weight_kg: 20.0 },
 
-  // Cardio session — Alice (different structure, justifies MongoDB)
-  {
-    user_id: 1,
-    session_type_id: 2,
-    session_date: new Date("2026-05-07T07:00:00Z"),
-    duration_minutes: 35,
-    feeling: 3,
-    free_note: "Easy morning run",
-    exercises: [
-      {
-        exercise_id: 4,
-        name: "Running",
-        type: "cardio",
-        distance_km: 5.2,
-        time_s: 1620,
-        avg_heart_rate: 158,
-        max_heart_rate: 174,
-        km_splits: [312, 308, 315, 301, 299]
-      }
-    ]
-  },
+  // Antoine — Leg Day
+  { user_id: 1, session_id: 2, exercise_name: "Barbell Squat",       date: new Date("2026-05-07"), sets: 4, reps: 8,  weight_kg: 80.0 },
+  { user_id: 1, session_id: 2, exercise_name: "Romanian Deadlift",   date: new Date("2026-05-07"), sets: 3, reps: 10, weight_kg: 60.0 },
+  { user_id: 1, session_id: 2, exercise_name: "Leg Press",           date: new Date("2026-05-07"), sets: 3, reps: 12, weight_kg: 100.0 },
 
-  // Strength session — Bob
-  {
-    user_id: 2,
-    session_type_id: 3,
-    session_date: new Date("2026-05-06T18:00:00Z"),
-    duration_minutes: 65,
-    feeling: 5,
-    free_note: "Very tough session, legs were destroyed",
-    exercises: [
-      {
-        exercise_id: 1,
-        name: "Barbell Squat",
-        type: "strength",
-        sets: [
-          { set_number: 1, reps: 8, weight_kg: 80.0, completed: true },
-          { set_number: 2, reps: 8, weight_kg: 85.0, completed: true },
-          { set_number: 3, reps: 6, weight_kg: 90.0, completed: true },
-          { set_number: 4, reps: 4, weight_kg: 95.0, completed: false }
-        ]
-      }
-    ]
-  }
+  // Kader — Pull Day
+  { user_id: 2, session_id: 3, exercise_name: "Pull Ups",            date: new Date("2026-05-06"), sets: 4, reps: 8,  weight_kg: null },
+  { user_id: 2, session_id: 3, exercise_name: "Barbell Row",         date: new Date("2026-05-06"), sets: 4, reps: 10, weight_kg: 50.0 },
+  { user_id: 2, session_id: 3, exercise_name: "Bicep Curl",          date: new Date("2026-05-06"), sets: 3, reps: 12, weight_kg: 15.0 },
 
+  // Sofia — Full Body
+  { user_id: 3, session_id: 4, exercise_name: "Barbell Squat",       date: new Date("2026-05-08"), sets: 3, reps: 8,  weight_kg: 50.0 },
+  { user_id: 3, session_id: 4, exercise_name: "Bench Press",         date: new Date("2026-05-08"), sets: 3, reps: 10, weight_kg: 40.0 },
+  { user_id: 3, session_id: 4, exercise_name: "Deadlift",            date: new Date("2026-05-08"), sets: 3, reps: 5,  weight_kg: 70.0 }
 ]);
 
-print("FitTrack MongoDB initialized successfully");
+print("FitTrack MongoDB initialized successfully — " + db.workout_logs.countDocuments() + " workout logs inserted");
