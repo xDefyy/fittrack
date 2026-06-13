@@ -9,7 +9,7 @@ app = FastAPI(title="FitTrack API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost"],
+    allow_origins=["http://localhost:5173", "http://localhost", "http://localhost:80"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
