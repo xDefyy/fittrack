@@ -10,8 +10,9 @@ export default function Profile() {
 
   const [profile, setProfile] = useState<any>(null)
   const [sessions, setSessions] = useState<any[]>([])
-  const [followers, setFollowers] = useState(0)
+  const [followers, setFollowers] = useState<{id: number, name: string}[]>([])
   const [isFollowing, setIsFollowing] = useState(false)
+  const [showFollowers, setShowFollowers] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const isOwnProfile = currentUser.id === Number(id)
@@ -24,7 +25,7 @@ export default function Profile() {
     ]).then(([user, sess, followerData]) => {
       setProfile(user)
       setSessions(Array.isArray(sess) ? sess : [])
-      setFollowers(followerData.count)
+      setFollowers(followerData.followers || [])
       const alreadyFollowing = followerData.followers.some((f: any) => f.id === currentUser.id)
       setIsFollowing(alreadyFollowing)
     }).finally(() => setLoading(false))
@@ -37,7 +38,7 @@ export default function Profile() {
       body: JSON.stringify({ source_id: currentUser.id, target_id: Number(id) }),
     })
     setIsFollowing(true)
-    setFollowers(f => f + 1)
+    setFollowers(f => [...f, { id: currentUser.id, name: currentUser.name }])
   }
 
   async function handleUnfollow() {
@@ -47,7 +48,7 @@ export default function Profile() {
       body: JSON.stringify({ source_id: currentUser.id, target_id: Number(id) }),
     })
     setIsFollowing(false)
-    setFollowers(f => f - 1)
+    setFollowers(f => f.filter(x => x.id !== currentUser.id))
   }
 
   if (loading) return <p className="empty-state">Loading...</p>
@@ -60,9 +61,33 @@ export default function Profile() {
           <div>
             <h1 style={{ fontSize: '1.3rem', fontWeight: 700 }}>{profile.name}</h1>
             <p style={{ color: '#71717a', fontSize: '0.875rem', marginTop: '0.2rem' }}>{profile.email}</p>
-            <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
-              <strong>{followers}</strong> follower{followers !== 1 ? 's' : ''}
+            <p
+              style={{ marginTop: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', textDecoration: 'underline' }}
+              onClick={() => setShowFollowers(v => !v)}
+            >
+              <strong>{followers.length}</strong> follower{followers.length !== 1 ? 's' : ''}
             </p>
+
+            {showFollowers && followers.length > 0 && (
+              <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {followers.map(f => (
+                  <span
+                    key={f.id}
+                    onClick={() => navigate(`/profile/${f.id}`)}
+                    style={{
+                      cursor: 'pointer',
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '999px',
+                      background: '#f4f4f5',
+                      fontSize: '0.8rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    {f.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {!isOwnProfile && (
@@ -87,7 +112,7 @@ export default function Profile() {
           <div className="card session-card" key={s.id} onClick={() => navigate(`/sessions/${s.id}`)} style={{ cursor: 'pointer' }}>
             <p style={{ fontWeight: 600 }}>{s.title}</p>
             <p style={{ fontSize: '0.8rem', color: '#71717a', marginTop: '0.2rem' }}>
-              {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg lifted` : ''}
+              {s.date}{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.total_weight > 0 ? ` · ${s.total_weight} kg soulevés` : ''}
             </p>
             {s.notes && <p style={{ fontSize: '0.82rem', marginTop: '0.3rem' }}>{s.notes}</p>}
           </div>
