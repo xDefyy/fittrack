@@ -86,19 +86,25 @@ def get_session(session_id: int, conn=Depends(get_db)):
 @router.post("/sessions", status_code=201)
 def create_session(data: SessionCreate, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO session (user_id, title, date, duration_minutes, notes) VALUES (%s, %s, %s, %s, %s)",
-        (data.user_id, data.title, data.date, data.duration_minutes, data.notes)
-    )
-    session_id = cur.lastrowid
+    try:
+        conn.start_transaction()
 
-    for ex in data.exercises:
         cur.execute(
-            "INSERT INTO session_exercise (session_id, exercise_name, sets, reps, weight_kg) VALUES (%s, %s, %s, %s, %s)",
-            (session_id, ex.exercise_name, ex.sets, ex.reps, ex.weight_kg)
+            "INSERT INTO session (user_id, title, date, duration_minutes, notes) VALUES (%s, %s, %s, %s, %s)",
+            (data.user_id, data.title, data.date, data.duration_minutes, data.notes)
         )
+        session_id = cur.lastrowid
 
-    conn.commit()
+        for ex in data.exercises:
+            cur.execute(
+                "INSERT INTO session_exercise (session_id, exercise_name, sets, reps, weight_kg) VALUES (%s, %s, %s, %s, %s)",
+                (session_id, ex.exercise_name, ex.sets, ex.reps, ex.weight_kg)
+            )
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail="Failed to save session")
 
     # Sauvegarde aussi dans MongoDB (un document par exercice)
     mongo = get_mongo()
@@ -138,7 +144,7 @@ def update_session(session_id: int, data: SessionUpdate, conn=Depends(get_db)):
     return {"message": "Session updated"}
 
 
-@router.delete("/sessions/{session_id}")
+@router.delete("/sessions/{session_id}", status_code=204)
 def delete_session(session_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT id FROM session WHERE id = %s", (session_id,))
@@ -147,4 +153,3 @@ def delete_session(session_id: int, conn=Depends(get_db)):
 
     cur.execute("DELETE FROM session WHERE id = %s", (session_id,))
     conn.commit()
-    return {"message": "Session deleted"}
