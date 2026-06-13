@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+import hashlib
 
 from database import get_db
 
 router = APIRouter()
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
 class UserCreate(BaseModel):
@@ -42,9 +46,10 @@ def create_user(user_data: UserCreate, conn=Depends(get_db)):
     if cur.fetchone():
         raise HTTPException(status_code=400, detail="Email already in use")
 
+    hashed = hash_password(user_data.password_hash)
     cur.execute(
         "INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s)",
-        (user_data.name, user_data.email, user_data.password_hash)
+        (user_data.name, user_data.email, hashed)
     )
     conn.commit()
     return {"id": cur.lastrowid, "name": user_data.name, "email": user_data.email}

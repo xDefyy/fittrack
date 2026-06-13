@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from database import get_mongo
 
 router = APIRouter()
@@ -44,3 +44,20 @@ def get_volume(user_id: int):
     ])
 
     return [{"date": str(r["_id"])[:10], "total_volume": round(r["total_volume"], 1)} for r in result]
+
+
+@router.get("/stats/search")
+def search_exercise_logs(user_id: int, q: str):
+    mongo = get_mongo()
+    if not q.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+    results = mongo["workout_logs"].find(
+        {"$text": {"$search": q}, "user_id": user_id},
+        {"_id": 0, "exercise_name": 1, "date": 1, "sets": 1}
+    ).limit(20)
+
+    return [
+        {"exercise_name": r["exercise_name"], "date": str(r["date"])[:10], "sets": r["sets"]}
+        for r in results
+    ]

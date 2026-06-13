@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const API = 'http://localhost:8000'
 
@@ -11,6 +12,7 @@ interface User {
 export default function Users() {
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
   const isAdmin = currentUser.is_admin === true
+  const navigate = useNavigate()
 
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -119,7 +121,14 @@ export default function Users() {
               {users.map(u => (
                 <tr key={u.id}>
                   <td>{u.id}</td>
-                  <td>{u.name}</td>
+                  <td>
+                    <span
+                      onClick={() => navigate(`/profile/${u.id}`)}
+                      style={{ cursor: 'pointer', fontWeight: 500, textDecoration: 'underline' }}
+                    >
+                      {u.name}
+                    </span>
+                  </td>
                   <td>{u.email}</td>
                   {isAdmin && (
                     <td>
