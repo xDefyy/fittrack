@@ -21,8 +21,9 @@ export default function Users() {
 
   async function load() {
     try {
-      const res = await fetch(`${API}/users`)
-      setUsers(await res.json())
+      const res = await fetch(`${API}/users?page=1&limit=100`)
+      const data = await res.json()
+      setUsers(Array.isArray(data.data) ? data.data : [])
     } catch {
       setStatus('Could not reach the API')
     } finally {
