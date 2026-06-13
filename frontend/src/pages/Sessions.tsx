@@ -49,9 +49,9 @@ export default function Sessions({ exercises: exerciseOptions }: Props) {
 
   useEffect(() => {
     if (!user.id) return
-    fetch(`${API}/sessions?user_id=${user.id}`)
+    fetch(`${API}/sessions?user_id=${user.id}&page=1&limit=50`)
       .then(r => r.json())
-      .then(data => setSessions(Array.isArray(data) ? data : []))
+      .then(data => setSessions(Array.isArray(data.data) ? data.data : []))
       .catch(() => setError('Could not load sessions'))
       .finally(() => setLoading(false))
 

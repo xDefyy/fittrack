@@ -20,11 +20,11 @@ export default function Profile() {
   useEffect(() => {
     Promise.all([
       fetch(`${API}/users/${id}`).then(r => r.json()),
-      fetch(`${API}/sessions?user_id=${id}`).then(r => r.json()),
+      fetch(`${API}/sessions?user_id=${id}&page=1&limit=50`).then(r => r.json()),
       fetch(`${API}/users/${id}/followers`).then(r => r.json()),
     ]).then(([user, sess, followerData]) => {
       setProfile(user)
-      setSessions(Array.isArray(sess) ? sess : [])
+      setSessions(Array.isArray(sess.data) ? sess.data : [])
       setFollowers(followerData.followers || [])
       const alreadyFollowing = followerData.followers.some((f: any) => f.id === currentUser.id)
       setIsFollowing(alreadyFollowing)

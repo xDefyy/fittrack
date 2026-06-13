@@ -22,11 +22,21 @@ class UserUpdate(BaseModel):
 
 
 @router.get("/users")
-def get_users(conn=Depends(get_db)):
+def get_users(page: int = 1, limit: int = 10, conn=Depends(get_db)):
+    offset = (page - 1) * limit
     cur = conn.cursor()
-    cur.execute("SELECT id, name, email FROM users")
+    cur.execute("SELECT id, name, email FROM users ORDER BY id LIMIT %s OFFSET %s", (limit, offset))
     rows = cur.fetchall()
-    return [{"id": r[0], "name": r[1], "email": r[2]} for r in rows]
+
+    cur.execute("SELECT COUNT(*) FROM users")
+    total = cur.fetchone()[0]
+
+    return {
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "data": [{"id": r[0], "name": r[1], "email": r[2]} for r in rows]
+    }
 
 
 @router.get("/users/{user_id}")

@@ -31,7 +31,8 @@ class SessionUpdate(BaseModel):
 
 
 @router.get("/sessions")
-def get_sessions(user_id: int, conn=Depends(get_db)):
+def get_sessions(user_id: int, page: int = 1, limit: int = 10, conn=Depends(get_db)):
+    offset = (page - 1) * limit
     cur = conn.cursor()
     cur.execute(
         """
@@ -42,14 +43,24 @@ def get_sessions(user_id: int, conn=Depends(get_db)):
         WHERE s.user_id = %s
         GROUP BY s.id, s.title, s.date, s.duration_minutes, s.notes
         ORDER BY s.date DESC
+        LIMIT %s OFFSET %s
         """,
-        (user_id,)
+        (user_id, limit, offset)
     )
     rows = cur.fetchall()
-    return [
-        {"id": r[0], "title": r[1], "date": str(r[2]), "duration_minutes": r[3], "notes": r[4], "total_weight": round(float(r[5]), 1)}
-        for r in rows
-    ]
+
+    cur.execute("SELECT COUNT(*) FROM session WHERE user_id = %s", (user_id,))
+    total = cur.fetchone()[0]
+
+    return {
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "data": [
+            {"id": r[0], "title": r[1], "date": str(r[2]), "duration_minutes": r[3], "notes": r[4], "total_weight": round(float(r[5]), 1)}
+            for r in rows
+        ]
+    }
 
 
 @router.get("/sessions/{session_id}")
