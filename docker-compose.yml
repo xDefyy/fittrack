@@ -13,6 +13,11 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/sql/INIT.sql:/docker-entrypoint-initdb.d/INIT.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "fittrack", "-pPSTBADMIN"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   mongodb:
@@ -24,6 +29,11 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   backend:
@@ -39,8 +49,10 @@ services:
       MONGO_URI: mongodb://fittrack:fittrack_pass@mongodb:27017/?authSource=admin
       MONGO_DB: fittrack
     depends_on:
-      - mysql
-      - mongodb
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
