@@ -39,6 +39,14 @@ def get_users(page: int = 1, limit: int = 10, conn=Depends(get_db)):
     }
 
 
+@router.get("/users/{user_id}/badges")
+def get_user_badges(user_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT badge_name, awarded_at FROM user_badge WHERE user_id = %s ORDER BY awarded_at", (user_id,))
+    rows = cur.fetchall()
+    return [{"badge_name": r[0], "awarded_at": str(r[1])[:10]} for r in rows]
+
+
 @router.get("/users/{user_id}")
 def get_user(user_id: int, conn=Depends(get_db)):
     cur = conn.cursor()

@@ -11,6 +11,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<any>(null)
   const [sessions, setSessions] = useState<any[]>([])
   const [followers, setFollowers] = useState<{id: number, name: string}[]>([])
+  const [badges, setBadges] = useState<{badge_name: string, awarded_at: string}[]>([])
   const [isFollowing, setIsFollowing] = useState(false)
   const [showFollowers, setShowFollowers] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -22,10 +23,12 @@ export default function Profile() {
       fetch(`${API}/users/${id}`).then(r => r.json()),
       fetch(`${API}/sessions?user_id=${id}&page=1&limit=50`).then(r => r.json()),
       fetch(`${API}/users/${id}/followers`).then(r => r.json()),
-    ]).then(([user, sess, followerData]) => {
+      fetch(`${API}/users/${id}/badges`).then(r => r.json()),
+    ]).then(([user, sess, followerData, badgeData]) => {
       setProfile(user)
       setSessions(Array.isArray(sess.data) ? sess.data : [])
       setFollowers(followerData.followers || [])
+      setBadges(Array.isArray(badgeData) ? badgeData : [])
       const alreadyFollowing = followerData.followers.some((f: any) => f.id === currentUser.id)
       setIsFollowing(alreadyFollowing)
     }).finally(() => setLoading(false))
@@ -100,6 +103,29 @@ export default function Profile() {
           )}
         </div>
       </div>
+
+      {badges.length > 0 && (
+        <div className="card">
+          <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Badges</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+            {badges.map(b => (
+              <span key={b.badge_name} style={{
+                padding: '0.25rem 0.75rem',
+                borderRadius: '999px',
+                background: '#18181b',
+                color: '#fff',
+                fontSize: '0.8rem',
+                fontWeight: 500
+              }}>
+                {b.badge_name === 'First Workout' ? '🏅' :
+                 b.badge_name === 'Regular' ? '⭐' :
+                 b.badge_name === 'Dedicated' ? '🔥' :
+                 b.badge_name === 'Athlete' ? '💪' : '🏆'} {b.badge_name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="page-header">
         <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>Sessions</h2>
