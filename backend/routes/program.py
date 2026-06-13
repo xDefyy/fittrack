@@ -62,9 +62,34 @@ def update_program(program_id: int, program_data: ProgramUpdate, conn=Depends(ge
     return {"message": "Program updated"}
 
 
-@router.delete("/programs/{program_id}")
+@router.delete("/programs/{program_id}", status_code=204)
 def delete_program(program_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("DELETE FROM program WHERE id = %s", (program_id,))
     conn.commit()
-    return {"message": "Program deleted"}
+
+
+@router.post("/programs/{program_id}/join", status_code=201)
+def join_program(program_id: int, user_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.callproc("join_program", (user_id, program_id))
+    conn.commit()
+    return {"message": "Joined program"}
+
+
+@router.post("/programs/{program_id}/deactivate")
+def deactivate_program(program_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.callproc("deactivate_program", (program_id,))
+    conn.commit()
+    return {"message": "Program deactivated"}
+
+
+@router.get("/programs/user/{user_id}/count")
+def count_programs(user_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.callproc("count_programs", (user_id,))
+    for result in cur.stored_results():
+        row = result.fetchone()
+        return {"user_id": user_id, "total": row[0] if row else 0}
+    return {"user_id": user_id, "total": 0}
