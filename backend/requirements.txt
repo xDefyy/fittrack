@@ -4,3 +4,4 @@ mysql-connector-python
 pymongo
 python-dotenv
 pydantic
+passlib[bcrypt]
