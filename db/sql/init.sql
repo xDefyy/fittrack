@@ -121,6 +121,14 @@ CREATE TABLE session_exercise (
     FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE
 );
 
+CREATE TABLE user_badge (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT NOT NULL,
+    badge_name VARCHAR(100) NOT NULL,
+    awarded_at DATETIME DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- --------------------------------------------------------
 -- INDEX
 -- --------------------------------------------------------
@@ -147,6 +155,24 @@ FROM follow f
 JOIN users u1 ON u1.id = f.source_id
 JOIN users u2 ON u2.id = f.target_id;
 
+-- Vue agrégée : résumé complet par utilisateur
+CREATE VIEW v_user_summary AS
+SELECT
+    u.id,
+    u.name,
+    u.email,
+    COUNT(DISTINCT s.id)                                                          AS total_sessions,
+    COALESCE(SUM(se.sets * COALESCE(se.reps, 1) * COALESCE(se.weight_kg, 0)), 0) AS total_volume_kg,
+    COUNT(DISTINCT f.source_id)                                                   AS follower_count,
+    COUNT(DISTINCT ub.id)                                                         AS badge_count,
+    MAX(s.date)                                                                   AS last_session_date
+FROM users u
+LEFT JOIN session        s  ON s.user_id  = u.id
+LEFT JOIN session_exercise se ON se.session_id = s.id
+LEFT JOIN follow         f  ON f.target_id = u.id
+LEFT JOIN user_badge     ub ON ub.user_id  = u.id
+GROUP BY u.id, u.name, u.email;
+
 -- --------------------------------------------------------
 -- TRIGGERS
 -- --------------------------------------------------------
@@ -169,6 +195,57 @@ BEFORE UPDATE ON users
 FOR EACH ROW
 BEGIN
     SET NEW.created_at = NOW();
+END$$
+DELIMITER ;
+
+-- Trigger : attribution automatique de badges selon le nombre de séances
+DELIMITER $$
+CREATE TRIGGER trg_award_session_badge
+AFTER INSERT ON session
+FOR EACH ROW
+BEGIN
+    DECLARE total_sessions INT;
+    DECLARE already_awarded INT;
+
+    SELECT COUNT(*) INTO total_sessions
+    FROM session
+    WHERE user_id = NEW.user_id;
+
+    IF total_sessions = 1 THEN
+        SELECT COUNT(*) INTO already_awarded FROM user_badge
+        WHERE user_id = NEW.user_id AND badge_name = 'First Workout';
+        IF already_awarded = 0 THEN
+            INSERT INTO user_badge (user_id, badge_name) VALUES (NEW.user_id, 'First Workout');
+        END IF;
+
+    ELSEIF total_sessions = 5 THEN
+        SELECT COUNT(*) INTO already_awarded FROM user_badge
+        WHERE user_id = NEW.user_id AND badge_name = 'Regular';
+        IF already_awarded = 0 THEN
+            INSERT INTO user_badge (user_id, badge_name) VALUES (NEW.user_id, 'Regular');
+        END IF;
+
+    ELSEIF total_sessions = 10 THEN
+        SELECT COUNT(*) INTO already_awarded FROM user_badge
+        WHERE user_id = NEW.user_id AND badge_name = 'Dedicated';
+        IF already_awarded = 0 THEN
+            INSERT INTO user_badge (user_id, badge_name) VALUES (NEW.user_id, 'Dedicated');
+        END IF;
+
+    ELSEIF total_sessions = 25 THEN
+        SELECT COUNT(*) INTO already_awarded FROM user_badge
+        WHERE user_id = NEW.user_id AND badge_name = 'Athlete';
+        IF already_awarded = 0 THEN
+            INSERT INTO user_badge (user_id, badge_name) VALUES (NEW.user_id, 'Athlete');
+        END IF;
+
+    ELSEIF total_sessions = 50 THEN
+        SELECT COUNT(*) INTO already_awarded FROM user_badge
+        WHERE user_id = NEW.user_id AND badge_name = 'Champion';
+        IF already_awarded = 0 THEN
+            INSERT INTO user_badge (user_id, badge_name) VALUES (NEW.user_id, 'Champion');
+        END IF;
+    END IF;
 END$$
 DELIMITER ;
 
