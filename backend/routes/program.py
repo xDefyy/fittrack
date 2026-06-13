@@ -21,6 +21,7 @@ class ProgramUpdate(BaseModel):
 
 @router.get("/programs")
 def get_programs(conn=Depends(get_db)):
+    # TODO: add user_id filter
     cur = conn.cursor()
     cur.execute("SELECT id, user_id, name, description, active FROM program")
     rows = cur.fetchall()
@@ -51,17 +52,12 @@ def create_program(program_data: ProgramCreate, conn=Depends(get_db)):
 @router.put("/programs/{program_id}")
 def update_program(program_id: int, program_data: ProgramUpdate, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM program WHERE id = %s", (program_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="Program not found")
-
     if program_data.name:
         cur.execute("UPDATE program SET name = %s WHERE id = %s", (program_data.name, program_id))
     if program_data.description:
         cur.execute("UPDATE program SET description = %s WHERE id = %s", (program_data.description, program_id))
     if program_data.active is not None:
         cur.execute("UPDATE program SET active = %s WHERE id = %s", (program_data.active, program_id))
-
     conn.commit()
     return {"message": "Program updated"}
 
@@ -69,10 +65,6 @@ def update_program(program_id: int, program_data: ProgramUpdate, conn=Depends(ge
 @router.delete("/programs/{program_id}")
 def delete_program(program_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM program WHERE id = %s", (program_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="Program not found")
-
     cur.execute("DELETE FROM program WHERE id = %s", (program_id,))
     conn.commit()
     return {"message": "Program deleted"}

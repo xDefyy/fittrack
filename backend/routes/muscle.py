@@ -48,15 +48,10 @@ def create_muscle(muscle_data: MuscleCreate, conn=Depends(get_db)):
 @router.put("/muscles/{muscle_id}")
 def update_muscle(muscle_id: int, muscle_data: MuscleUpdate, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM muscle WHERE id = %s", (muscle_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="Muscle not found")
-
     if muscle_data.name:
         cur.execute("UPDATE muscle SET name = %s WHERE id = %s", (muscle_data.name, muscle_id))
     if muscle_data.group_name:
         cur.execute("UPDATE muscle SET group_name = %s WHERE id = %s", (muscle_data.group_name, muscle_id))
-
     conn.commit()
     return {"message": "Muscle updated"}
 
@@ -64,10 +59,6 @@ def update_muscle(muscle_id: int, muscle_data: MuscleUpdate, conn=Depends(get_db
 @router.delete("/muscles/{muscle_id}")
 def delete_muscle(muscle_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
-    cur.execute("SELECT id FROM muscle WHERE id = %s", (muscle_id,))
-    if not cur.fetchone():
-        raise HTTPException(status_code=404, detail="Muscle not found")
-
     cur.execute("DELETE FROM muscle WHERE id = %s", (muscle_id,))
     conn.commit()
     return {"message": "Muscle deleted"}

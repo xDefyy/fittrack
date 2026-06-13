@@ -7,6 +7,7 @@ router = APIRouter()
 
 @router.get("/exercises")
 def get_exercises(conn=Depends(get_db)):
+    # TODO: add name search param
     cur = conn.cursor()
     cur.execute("""
         SELECT e.id, e.name, e.type, e.description,
